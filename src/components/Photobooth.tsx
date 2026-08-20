@@ -30,7 +30,7 @@ export default function Photobooth({ onMomentAdded }: PhotoboothProps) {
   const [facingMode, setFacingMode] = useState<FacingMode>('user');
   const [mode, setMode] = useState<CaptureMode>('photo');
   const [photoCount, setPhotoCount] = useState(1);
-  const [templateId, setTemplateId] = useState('classic');
+  const [templateId, setTemplateId] = useState('thin');
   const [phase, setPhase] = useState<Phase>('permission');
 
   const { status, errorMsg, stream, hasMultipleCameras } = useCameraStream(
@@ -297,84 +297,58 @@ export default function Photobooth({ onMomentAdded }: PhotoboothProps) {
         </div>
       )}
 
-      {/* Camera stage */}
-      <div
-        className="relative w-full mx-auto bg-black"
-        style={{
-          aspectRatio: '3 / 4',
-          maxHeight: '70vh',
-          maxWidth: 'min(100%, 520px)',
-        }}
-      >
-        {phase === 'permission' && (
-          <PermissionGate onEnable={handleEnable} error={enabled ? errorMsg : undefined} />
-        )}
+      {/* Camera stage — only for live preview and countdown */}
+      {(phase === 'permission' ||
+        phase === 'live' ||
+        phase === 'countdown') && (
+        <div
+          className="relative w-full mx-auto bg-black"
+          style={{
+            aspectRatio: '3 / 4',
+            maxHeight: '70vh',
+            maxWidth: 'min(100%, 520px)',
+          }}
+        >
+          {phase === 'permission' && (
+            <PermissionGate onEnable={handleEnable} error={enabled ? errorMsg : undefined} />
+          )}
 
-        {phase !== 'permission' && (
-          <>
-            {/* Hidden live video ref for capture */}
-            <video
-              ref={videoRef}
-              playsInline
-              muted
-              autoPlay
-              className="hidden"
-            />
-
-            {/* Visible camera or result */}
-            {(phase === 'live' || phase === 'countdown') && (
-              <CameraView
-                stream={stream}
-                facingMode={facingMode}
-                status={status}
-                errorMsg={errorMsg}
-                mode={mode}
-                recording={recording}
-                elapsed={elapsed}
-                hasMultipleCameras={hasMultipleCameras}
-                onSwitchCamera={handleSwitchCamera}
-                onShutter={startPhotoSequence}
-                onToggleRecord={toggleRecord}
-                recordingSupported={recordingSupported}
+          {phase !== 'permission' && (
+            <>
+              {/* Hidden live video ref for capture */}
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                autoPlay
+                className="hidden"
               />
-            )}
 
-            {phase === 'countdown' && (
-              <Countdown key={capturedFrames.length} onDone={onCountdownDone} />
-            )}
-
-            {phase === 'photo-result' && finalPhoto && (
-              <div className="absolute inset-0 bg-cream flex items-center justify-center p-4 overflow-y-auto">
-                {rendering ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-10 w-10 rounded-full border-2 border-pink-200 border-t-pink-500 animate-spin" />
-                    <p className="text-sm text-ink/60">Applying template…</p>
-                  </div>
-                ) : (
-                  <PhotoResult
-                    photoUrl={finalPhoto}
-                    onRetake={handleRetakePhoto}
-                    onSend={handleSendPhoto}
-                    sending={sending}
-                  />
-                )}
-              </div>
-            )}
-
-            {phase === 'video-result' && videoBlobUrl && (
-              <div className="absolute inset-0 bg-cream flex items-center justify-center p-4 overflow-y-auto">
-                <VideoResult
-                  videoUrl={videoBlobUrl}
-                  duration={videoDuration}
-                  onRetake={handleRetakeVideo}
-                  onSend={handleSendVideo}
-                  sending={sending}
+              {/* Visible camera */}
+              {(phase === 'live' || phase === 'countdown') && (
+                <CameraView
+                  stream={stream}
+                  facingMode={facingMode}
+                  status={status}
+                  errorMsg={errorMsg}
+                  mode={mode}
+                  recording={recording}
+                  elapsed={elapsed}
+                  hasMultipleCameras={hasMultipleCameras}
+                  onSwitchCamera={handleSwitchCamera}
+                  onShutter={startPhotoSequence}
+                  onToggleRecord={toggleRecord}
+                  recordingSupported={recordingSupported}
                 />
-              </div>
-            )}
-          </>
-        )}
-      </div>
+              )}
+
+              {phase === 'countdown' && (
+                <Countdown key={capturedFrames.length} onDone={onCountdownDone} />
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Shot progress (photo sequence) */}
       {phase === 'countdown' && mode === 'photo' && (
@@ -387,6 +361,38 @@ export default function Photobooth({ onMomentAdded }: PhotoboothProps) {
               }`}
             />
           ))}
+        </div>
+      )}
+
+      {/* Photo result — full width, not clipped by camera stage */}
+      {phase === 'photo-result' && (
+        <div className="flex flex-col items-center py-6 px-4 bg-cream min-h-[50vh]">
+          {rendering ? (
+            <div className="flex flex-col items-center gap-3 py-20">
+              <div className="h-10 w-10 rounded-full border-2 border-pink-200 border-t-pink-500 animate-spin" />
+              <p className="text-sm text-ink/60">Applying template…</p>
+            </div>
+          ) : finalPhoto ? (
+            <PhotoResult
+              photoUrl={finalPhoto}
+              onRetake={handleRetakePhoto}
+              onSend={handleSendPhoto}
+              sending={sending}
+            />
+          ) : null}
+        </div>
+      )}
+
+      {/* Video result — full width, not clipped by camera stage */}
+      {phase === 'video-result' && videoBlobUrl && (
+        <div className="flex flex-col items-center py-6 px-4 bg-cream min-h-[50vh]">
+          <VideoResult
+            videoUrl={videoBlobUrl}
+            duration={videoDuration}
+            onRetake={handleRetakeVideo}
+            onSend={handleSendVideo}
+            sending={sending}
+          />
         </div>
       )}
 

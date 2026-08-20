@@ -23,7 +23,20 @@ export interface Template {
   frame: string;
   label: string;
   showNames: boolean;
+  variant: FrameVariant;
 }
+
+export type FrameVariant =
+  | 'plain'
+  | 'thin'
+  | 'thick'
+  | 'polaroid'
+  | 'double'
+  | 'gradient'
+  | 'dots'
+  | 'shadow'
+  | 'tape'
+  | 'art';
 
 export interface CapturedPhoto {
   dataUrl: string;
